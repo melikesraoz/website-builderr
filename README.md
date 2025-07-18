@@ -25,6 +25,7 @@ Otel sahiplerinin teknik bilgiye ihtiyaç duymadan, hazır şablonlar ve formlar
 
  Rakipler:
 - **Carrd** → sade ama sektöre özel değil
+![alt text](image-3.png)
 - **Dorik** → güçlü ama genel kullanım
 ![alt text](image-1.png)
 - **Elektraweb** → otellere özel ama builder değil
