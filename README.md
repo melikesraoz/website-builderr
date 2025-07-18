@@ -1,29 +1,39 @@
-    Proje Analizi & Gereksinimler (Spec)
+Otel Website Builder | Hızlı & Otomatik Web Sitesi Oluşturucu
 
-        Node.js Website Builder
+ Amaç:
+Otel sahiplerinin teknik bilgiye ihtiyaç duymadan, hazır şablonlar ve formlar aracılığıyla kendi web sitelerini hızlı ve otomatik olarak oluşturabilmesini sağlamak. İstenilen temada istenilen özelleştirmeleri yapabilme imkanı sağlayarak kişisel bir deneyim sunmak.
 
-    Amaç:
-Kullanıcıların form tabanlı veya sürükle-bırak mantığıyla web sayfası oluşturmasına olanak tanıyan, Node.js tabanlı bir website üretim sisteminin geliştirilmesi.
+ Hedef Kullanıcılar:
+. Otel sahipleri ve küçük işletmeler
+. Teknik bilgisi olmayan kişiler
+. Tek sayfalık, modern ve sade web sitesi isteyen kullanıcılar
 
-    Hedef Kullanıcı:
-- Teknik bilgisi olmayan kişiler
-- Hızlıca tek sayfalık web sayfası oluşturmak isteyen küçük işletmeler
-- Kendi tasarımını kodsuz oluşturmak isteyen kullanıcılar
+ Kullanılacak Teknolojiler:
+. Next.js → Frontend & SSR destekli kullanıcı arayüzü
+. Node.js → JSON verisinden dinamik HTML üretimi, dosya oluşturma
+. Tailwind CSS → Şablonların stil tasarımı
+. JSON → Sayfa yapısı verisi
 
-    Kullanılacak Teknolojiler:
-- Node.js → Sunucu tarafı yapılandırma ve çıktı üretimi  
-- HTML/CSS Generator → JSON’a göre dinamik içerik üretimi  
-- (İsteğe bağlı) JS tabanlı mini frontend editor  
-- JSON → Sayfa yapısını tanımlamak için veri modeli
 
-    Temel Özellikler:
-- Formla başlık, açıklama, görsel gibi alanları girme  
-- JSON verisine göre HTML sayfa oluşturma  
-- Alternatif olarak sürükle bırak panel (zorunlu değil)  
-- Oluşan sayfanın önizlemesi ve “İndir” özelliği  
-- Taslak şablon seçimi (hazır tema)
+ Temel Özellikler:
+. Hazır otel temalarından seçim
+. Formla başlık, açıklama, galeri, iletişim bilgisi girme
+. JSON yapısından HTML + CSS üretme
+. Sayfanın anlık önizlemesi
+. “İndir” butonuyla .zip dosya olarak dışa aktarma
+. (İsteğe bağlı) Sürükle-bırak editör
 
-   İlham Alınan Uygulamalar:
--Dorik, Carrd, Webflow (lite versiyon)
+ Rakipler:
+- **Carrd** → sade ama sektöre özel değil
+- **Dorik** → güçlü ama genel kullanım
+![alt text](image-1.png)
+- **Elektraweb** → otellere özel ama builder değil
+![alt text](image-2.png)
+- **Webflow** → güçlü ama pahalı ve karmaşık
 
--HTML generators
+ Proje Farkı:
+- Otel sektörü özelinde tema ve içerik desteği
+- JSON ile özelleştirme + statik HTML üretimi
+- Teknik bilgi gerektirmeyen UX
+- Dosya indirme özelliği (offline barındırma da mümkün)
+
