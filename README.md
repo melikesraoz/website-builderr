@@ -38,3 +38,25 @@ Otel sahiplerinin teknik bilgiye ihtiyaç duymadan, hazır şablonlar ve formlar
 - Teknik bilgi gerektirmeyen UX
 - Dosya indirme özelliği (offline barındırma da mümkün)
 
+
+
+
+--------------------------
+
+![alt text](image-5.png)
+
+WebSnap Nedir?
+
+Website ve Snap kelimelerinin birleşiminden oluşmuştur. Sloganımızdan da anlaşılacağı üzere: Parmak izi kadar **eşsiz**, parmak şıklatmak kadar **kolay**.
+
+**WebSnap**, otel sahiplerinin teknik bilgiye ihtiyaç duymadan hızlı ve profesyonel bir otel web sitesi oluşturmasını sağlayan modern bir platformdur.  
+
+Sloganımızın tamamı: **Create your website in a snap, as unique as your fingerprint.**
+
+-  Dakikalar içinde kurulum  
+-  Otellere özel şablonlar ve özellikler  
+-  Kodlama bilgisi gerektirmez  
+-  Mobil uyumlu ve modern kullanıcı arayüzü  
+-  SEO dostu ve çok dilli destek
+
+
