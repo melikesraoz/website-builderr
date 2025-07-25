@@ -1,0 +1,28 @@
+version: '3.9'
+services:
+  hotel-api:
+    build:
+      context: .
+      dockerfile: HotelBuilder.API/Dockerfile
+    ports:
+      - "5000:80"
+    depends_on:
+      - mssql
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=mssql;Database=HotelBuilderDb;User=sa;Password=Your_password123;TrustServerCertificate=true;
+    networks:
+      - hotel-network
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      SA_PASSWORD: "Your_password123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    networks:
+      - hotel-network
+
+networks:
+  hotel-network:

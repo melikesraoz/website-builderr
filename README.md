@@ -9,10 +9,10 @@ Otel sahiplerinin teknik bilgiye ihtiyaç duymadan, hazır şablonlar ve formlar
 . Tek sayfalık, modern ve sade web sitesi isteyen kullanıcılar
 
  Kullanılacak Teknolojiler:
-. Next.js → Frontend & SSR destekli kullanıcı arayüzü
-. Node.js → JSON verisinden dinamik HTML üretimi, dosya oluşturma
-. Tailwind CSS → Şablonların stil tasarımı
-. JSON → Sayfa yapısı verisi
+- Frontend: `Next.js` 
+- Backend: `.NET Core` 
+- Veritabanı: `SQL Server` 
+- Dağıtım: `Docker`
 
 
  Temel Özellikler:
@@ -59,4 +59,6 @@ Sloganımızın tamamı: **Create your website in a snap, as unique as your fing
 -  Mobil uyumlu ve modern kullanıcı arayüzü  
 -  SEO dostu ve çok dilli destek
 
-
+------
+Örnek login page:
+![alt text](image-6.png)
