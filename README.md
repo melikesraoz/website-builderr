@@ -59,6 +59,4 @@ Sloganımızın tamamı: **Create your website in a snap, as unique as your fing
 -  Mobil uyumlu ve modern kullanıcı arayüzü  
 -  SEO dostu ve çok dilli destek
 
-------
-Örnek login page:
-![alt text](image-6.png)
+
