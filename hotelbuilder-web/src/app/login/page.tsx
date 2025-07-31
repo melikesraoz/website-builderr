@@ -14,7 +14,6 @@ export default function LoginPage() {
   const router = useRouter()
 
 
-
 const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault();
 
@@ -30,7 +29,6 @@ const handleLogin = async (e: React.FormEvent) => {
     alert('Giriş başarısız, lütfen bilgilerinizi kontrol edin.');
   }
 };
-
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white px-4">
