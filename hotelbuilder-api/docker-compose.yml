@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  websnap-backend:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+    env_file:
+      - .env
+    volumes:
+      - .:/app
