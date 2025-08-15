@@ -1,22 +1,20 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-// POST /api/auth/register
 const registerUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { name, email, password } = req.body;
 
   try {
-    // Kullanıcı zaten kayıtlı mı?
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: 'Bu email zaten kayıtlı.' });
     }
 
-    // Şifreyi hashle
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Yeni kullanıcıyı oluştur
     const newUser = new User({
+      name,
       email,
       password: hashedPassword
     });
@@ -29,9 +27,6 @@ const registerUser = async (req, res) => {
     res.status(500).json({ message: 'Sunucu hatası.' });
   }
 };
-
-// Geçici login fonksiyonu (boş)
-const jwt = require('jsonwebtoken');
 
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -47,7 +42,6 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Şifre yanlış.' });
     }
 
-    // 🔐 Token oluştur
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
@@ -56,9 +50,10 @@ const loginUser = async (req, res) => {
 
     res.status(200).json({
       message: 'Giriş başarılı!',
-      token, // frontend bunu saklayacak
+      token,
       user: {
         id: user._id,
+        name: user.name,
         email: user.email
       }
     });
@@ -67,7 +62,5 @@ const loginUser = async (req, res) => {
     res.status(500).json({ message: 'Sunucu hatası.' });
   }
 };
-
-  
 
 module.exports = { registerUser, loginUser };
