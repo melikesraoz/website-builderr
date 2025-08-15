@@ -24,7 +24,19 @@ export default function CreatePage() {
     phone: '',
     email: '',
     rooms: '',
-    logo: ''
+    logo: '',
+    website: '',
+    facebook: '',
+    instagram: '',
+    twitter: '',
+    linkedin: '',
+    youtube: '',
+    whatsapp: '',
+    checkIn: '',
+    checkOut: '',
+    amenities: '',
+    priceRange: '',
+    starRating: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -116,7 +128,19 @@ export default function CreatePage() {
           phone: '', 
           email: '', 
           rooms: '', 
-          logo: '' 
+          logo: '',
+          website: '',
+          facebook: '',
+          instagram: '',
+          twitter: '',
+          linkedin: '',
+          youtube: '',
+          whatsapp: '',
+          checkIn: '',
+          checkOut: '',
+          amenities: '',
+          priceRange: '',
+          starRating: ''
         });
         setTimeout(() => {
           router.push('/dashboard');
@@ -139,7 +163,7 @@ export default function CreatePage() {
     }));
   };
 
-  const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setUrlData(prev => ({
       ...prev,
@@ -519,10 +543,222 @@ export default function CreatePage() {
                    className="form-input"
                    placeholder="https://example.com/logo.png"
                  />
-                 <small className="form-help">
-                   Bu logo klonlanan sitedeki mevcut logo ile değiştirilecek
-                 </small>
-               </div>
+                                   <small className="form-help">
+                    Bu logo klonlanan sitedeki mevcut logo ile değiştirilecek
+                  </small>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <h3 className="section-title">Sosyal Medya Hesapları</h3>
+                <p className="section-description">
+                  Sosyal medya hesaplarınızı girin, klonlanan sitedeki mevcut hesaplarla değiştirilecek
+                </p>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="urlWebsite" className="form-label">
+                      Website
+                    </label>
+                    <input
+                      id="urlWebsite"
+                      name="website"
+                      type="url"
+                      value={urlData.website}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                      placeholder="https://myhotel.com"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="urlFacebook" className="form-label">
+                      Facebook
+                    </label>
+                    <input
+                      id="urlFacebook"
+                      name="facebook"
+                      type="url"
+                      value={urlData.facebook}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                      placeholder="https://facebook.com/myhotel"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="urlInstagram" className="form-label">
+                      Instagram
+                    </label>
+                    <input
+                      id="urlInstagram"
+                      name="instagram"
+                      type="url"
+                      value={urlData.instagram}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                      placeholder="https://instagram.com/myhotel"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="urlTwitter" className="form-label">
+                      Twitter/X
+                    </label>
+                    <input
+                      id="urlTwitter"
+                      name="twitter"
+                      type="url"
+                      value={urlData.twitter}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                      placeholder="https://twitter.com/myhotel"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="urlLinkedin" className="form-label">
+                      LinkedIn
+                    </label>
+                    <input
+                      id="urlLinkedin"
+                      name="linkedin"
+                      type="url"
+                      value={urlData.linkedin}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                      placeholder="https://linkedin.com/company/myhotel"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="urlYoutube" className="form-label">
+                      YouTube
+                    </label>
+                    <input
+                      id="urlYoutube"
+                      name="youtube"
+                      type="url"
+                      value={urlData.youtube}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                      placeholder="https://youtube.com/@myhotel"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="urlWhatsapp" className="form-label">
+                    WhatsApp
+                  </label>
+                  <input
+                    id="urlWhatsapp"
+                    name="whatsapp"
+                    type="tel"
+                    value={urlData.whatsapp}
+                    onChange={handleUrlInputChange}
+                    className="form-input"
+                    placeholder="+90 555 123 4567"
+                  />
+                </div>
+              </div>
+
+              <div className="form-section">
+                <h3 className="section-title">Otel Detayları</h3>
+                <p className="section-description">
+                  Ek otel bilgileri ve özellikleri
+                </p>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="urlCheckIn" className="form-label">
+                      Check-in Saati
+                    </label>
+                    <input
+                      id="urlCheckIn"
+                      name="checkIn"
+                      type="text"
+                      value={urlData.checkIn}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                      placeholder="14:00"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="urlCheckOut" className="form-label">
+                      Check-out Saati
+                    </label>
+                    <input
+                      id="urlCheckOut"
+                      name="checkOut"
+                      type="text"
+                      value={urlData.checkOut}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                      placeholder="11:00"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="urlStarRating" className="form-label">
+                      Yıldız Sayısı
+                    </label>
+                    <select
+                      id="urlStarRating"
+                      name="starRating"
+                      value={urlData.starRating}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                    >
+                      <option value="">Seçiniz</option>
+                      <option value="1">⭐ 1 Yıldız</option>
+                      <option value="2">⭐⭐ 2 Yıldız</option>
+                      <option value="3">⭐⭐⭐ 3 Yıldız</option>
+                      <option value="4">⭐⭐⭐⭐ 4 Yıldız</option>
+                      <option value="5">⭐⭐⭐⭐⭐ 5 Yıldız</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="urlPriceRange" className="form-label">
+                      Fiyat Aralığı
+                    </label>
+                    <input
+                      id="urlPriceRange"
+                      name="priceRange"
+                      type="text"
+                      value={urlData.priceRange}
+                      onChange={handleUrlInputChange}
+                      className="form-input"
+                      placeholder="₺500-₺2000"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="urlAmenities" className="form-label">
+                    Özellikler (Virgülle ayırın)
+                  </label>
+                  <textarea
+                    id="urlAmenities"
+                    name="amenities"
+                    value={urlData.amenities}
+                    onChange={handleUrlInputChange}
+                    className="form-textarea"
+                    placeholder="WiFi, Havuz, Spa, Restoran, Bar, Fitness, Otopark"
+                    rows={3}
+                  />
+                  <small className="form-help">
+                    Otelinizin sunduğu özellikleri virgülle ayırarak yazın
+                  </small>
+                </div>
               </div>
 
                              <div className="form-section">
@@ -552,14 +788,30 @@ export default function CreatePage() {
                      <span className="feature-icon">✅</span>
                      <span className="feature-text">Logo otomatik değiştirilir</span>
                    </div>
-                   <div className="feature-item">
-                     <span className="feature-icon">✅</span>
-                     <span className="feature-text">Website keys (name, address) tanımlanır</span>
-                   </div>
-                   <div className="feature-item">
-                     <span className="feature-icon">✅</span>
-                     <span className="feature-text">Site production klasörüne kaydedilir</span>
-                   </div>
+                                       <div className="feature-item">
+                      <span className="feature-icon">✅</span>
+                      <span className="feature-text">Sosyal medya hesapları değiştirilir</span>
+                    </div>
+                    <div className="feature-item">
+                      <span className="feature-icon">✅</span>
+                      <span className="feature-text">Check-in/out saatleri güncellenir</span>
+                    </div>
+                    <div className="feature-item">
+                      <span className="feature-icon">✅</span>
+                      <span className="feature-text">Yıldız sayısı ve fiyat aralığı değiştirilir</span>
+                    </div>
+                    <div className="feature-item">
+                      <span className="feature-icon">✅</span>
+                      <span className="feature-text">Otel özellikleri (amenities) güncellenir</span>
+                    </div>
+                    <div className="feature-item">
+                      <span className="feature-icon">✅</span>
+                      <span className="feature-text">Website keys (name, address) tanımlanır</span>
+                    </div>
+                    <div className="feature-item">
+                      <span className="feature-icon">✅</span>
+                      <span className="feature-text">Site production klasörüne kaydedilir</span>
+                    </div>
                  </div>
                </div>
 
