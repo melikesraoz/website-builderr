@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require('../middlewares/authMiddleware');
 const Hotel = require('../models/Hotel');
-const { generateHTML } = require('../utils/htmlProcessor');
+const { generateHTML, safeDirName } = require('../utils/htmlProcessor');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
@@ -176,13 +176,13 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
     // 4. Gelişmiş HTML İçerik Değiştirme
     console.log('🔧 HTML içeriği işleniyor...');
     
-    // Tüm text node'ları işle
-    $('*').each((_, el) => {
-      const $el = $(el);
-      const text = $el.text();
-      
-      // Sadece text içeren elementleri işle
-      if (text && text.trim().length > 0 && !$el.find('*').length) {
+         // Tüm text node'ları işle (script/style hariç)
+     $('*').not('script, style').each((_, el) => {
+       const $el = $(el);
+       const text = $el.text();
+       
+       // Sadece text içeren ve daha önce işlenmemiş elementleri işle
+       if (text && text.trim().length > 0 && !$el.find('*').length && !$el.attr('data-ws-processed')) {
         let newText = text;
         let changed = false;
         
@@ -203,22 +203,7 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
           });
         }
         
-        // Telefon numarası değiştirme
-        if (phone && text.length > 5) {
-          const phonePatterns = [
-            /\+?[0-9\s\-\(\)\.]{10,}/g,
-            /[0-9]{3}[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{2}[\s\-\.]?[0-9]{2}/g,
-            /[0-9]{4}[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{2}[\s\-\.]?[0-9]{2}/g
-          ];
-          
-          phonePatterns.forEach(pattern => {
-            if (pattern.test(newText)) {
-              newText = newText.replace(pattern, phone);
-              changed = true;
-              console.log('📞 Telefon değiştirildi:', text, '→', newText);
-            }
-          });
-        }
+                 // ❌ TELEFON DEĞİŞTİRME KALDIRILDI - Leaf node'larda telefon parçalarını değiştirmek sorun yaratıyor
         
         // Email değiştirme
         if (email && text.includes('@')) {
@@ -244,37 +229,116 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
           }
         }
         
-        // Değişiklik varsa uygula
-        if (changed) {
-          $el.text(newText);
-        }
+                 // Değişiklik varsa uygula ve işlenmiş olarak işaretle
+         if (changed) {
+           $el.text(newText);
+           $el.attr('data-ws-processed', '1');
+         }
       }
-    });
+         });
+     
+     // 2. HEDEFLİ TELEFON GÜNCELLEMELERİ
+     console.log('📞 Hedefli telefon güncellemeleri yapılıyor...');
+     
+     // 2.a tel: linkleri düzelt
+     $('a[href^="tel:"]').each((_, a) => {
+       const $a = $(a);
+       $a.attr('href', `tel:${phone}`);
+       // ikonları koruyup metni normalize et
+       const hasIcon = $a.find('svg,i,img').length > 0;
+       if (!hasIcon) $a.text(phone);
+     });
+     
+     // 2.b whatsapp linkleri
+     if (whatsapp) {
+       const wa = `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`;
+       $(`a[href*="wa.me"], a[href*="whatsapp.com"], a:contains("WhatsApp"), a:contains("Whatsapp")`)
+         .attr('href', wa)
+         .each((_, a) => {
+           const $a = $(a);
+           const hasIcon = $a.find('svg,i,img').length > 0;
+           if (!hasIcon) $a.text(phone);
+         });
+     }
+     
+     // 2.c "telefon" taşıyan container'lar (class/id/aria/title)
+     const phoneSelector = [
+       '[class*="tel"]','[class*="phone"]','[id*="tel"]','[id*="phone"]',
+       '.contact-phone','.rezervasyon-phone','.reservation-phone'
+     ].join(',');
+     
+     // Bu tür container'larda ÇOCUK metinleri birleştirip tek seferde telefon yaz
+     $(phoneSelector).each((_, el) => {
+       const $el = $(el);
+       
+       // menü, sayaç, fiyat, tarih gibi alanlarda asla oynamayalım
+       const dangerRe = /(menu|nav|date|time|calendar|price|amount|counter|qty|adet|oda|room|adult|child)/i;
+       const cls = ($el.attr('class') || '') + ' ' + ($el.attr('id') || '');
+       if (dangerRe.test(cls)) return;
+       
+       // ikonları sakla, metni normalize et
+       const icons = $el.find('svg,i,img').clone();
+       $el.empty();
+       if (icons.length) $el.append(icons);
+       $el.append(phone);
+     });
+     
+     // Logo değiştirme
+     if (logo) {
+       let logoChanged = false;
+       
+       // Önce logo/brand içeren img'leri değiştir
+       $('img').each((_, el) => {
+         const $img = $(el);
+         const src = $img.attr('src') || '';
+         const alt = $img.attr('alt') || '';
+         const title = $img.attr('title') || '';
+         
+         if (src.toLowerCase().includes('logo') || 
+             alt.toLowerCase().includes('logo') || 
+             title.toLowerCase().includes('logo') ||
+             src.toLowerCase().includes('brand') ||
+             alt.toLowerCase().includes('brand')) {
+           $img.attr('src', logo);
+           logoChanged = true;
+           console.log('🖼️ Logo değiştirildi:', src, '→', logo);
+         }
+       });
+       
+       // Logo değiştirilmediyse, header'daki ilk img'yi logo olarak kullan
+       if (!logoChanged) {
+         const $headerImg = $('header img, .header img, nav img, .navbar img').first();
+         if ($headerImg.length) {
+           $headerImg.attr('src', logo);
+           console.log('🖼️ Header img logo olarak değiştirildi:', $headerImg.attr('src'), '→', logo);
+         }
+       }
+     }
     
-    // Logo değiştirme
-    if (logo) {
-      $('img').each((_, el) => {
-        const $img = $(el);
-        const src = $img.attr('src') || '';
-        const alt = $img.attr('alt') || '';
-        const title = $img.attr('title') || '';
-        
-        if (src.toLowerCase().includes('logo') || 
-            alt.toLowerCase().includes('logo') || 
-            title.toLowerCase().includes('logo') ||
-            src.toLowerCase().includes('brand') ||
-            alt.toLowerCase().includes('brand')) {
-          $img.attr('src', logo);
-          console.log('🖼️ Logo değiştirildi:', src, '→', logo);
-        }
-      });
+    // Meta tag'leri güncelle veya ekle
+    const head = $('head');
+    if (head.length) {
+      if ($('meta[name="description"]').length === 0) {
+        head.append(`<meta name="description" content="${description || name}">`);
+      } else {
+        $('meta[name="description"]').attr('content', description || name);
+      }
+      if ($('meta[property="og:title"]').length === 0) {
+        head.append(`<meta property="og:title" content="${name}">`);
+      } else {
+        $('meta[property="og:title"]').attr('content', name);
+      }
+      if ($('meta[property="og:description"]').length === 0) {
+        head.append(`<meta property="og:description" content="${description || name}">`);
+      } else {
+        $('meta[property="og:description"]').attr('content', description || name);
+      }
+      if ($('title').length === 0) {
+        head.append(`<title>${name}</title>`);
+      } else {
+        $('title').text(name);
+      }
     }
-    
-    // Meta tag'leri güncelle
-    $('meta[name="description"]').attr('content', description || name);
-    $('meta[property="og:title"]').attr('content', name);
-    $('meta[property="og:description"]').attr('content', description || name);
-    $('title').text(name);
     
     // Schema.org yapılandırılmış veri güncelleme
     $('script[type="application/ld+json"]').each((_, el) => {
@@ -297,72 +361,47 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
       }
     });
 
-    // 5. Website keys'leri tanımla ve son temizlik
-    let processedHTML = $.html();
-    
-    // Website keys değiştirme
-    processedHTML = processedHTML
-      .replace(/{{name}}/g, name)
-      .replace(/{{address}}/g, address)
-      .replace(/{{phone}}/g, phone)
-      .replace(/{{email}}/g, email)
-      .replace(/{{description}}/g, description || '')
-      .replace(/{{rooms}}/g, rooms || '')
-      .replace(/{{logo}}/g, logo || '')
-      .replace(/{{website}}/g, website || '')
-      .replace(/{{facebook}}/g, facebook || '')
-      .replace(/{{instagram}}/g, instagram || '')
-      .replace(/{{twitter}}/g, twitter || '')
-      .replace(/{{linkedin}}/g, linkedin || '')
-      .replace(/{{youtube}}/g, youtube || '')
-      .replace(/{{whatsapp}}/g, whatsapp || '')
-      .replace(/{{checkIn}}/g, checkIn || '')
-      .replace(/{{checkOut}}/g, checkOut || '')
-      .replace(/{{amenities}}/g, amenities || '')
-      .replace(/{{priceRange}}/g, priceRange || '')
-      .replace(/{{starRating}}/g, starRating ? '⭐'.repeat(parseInt(starRating)) : '');
-    
-    // Ek metin değiştirme (regex ile) - Daha agresif
-    const replacements = [
-      // Otel adı değiştirme - Çok agresif
-      { pattern: /(?:Grand\s+)?(?:Hotel|Otel|Resort|Motel|Inn)\s+[A-Za-zçğıöşüÇĞIİÖŞÜ\s]+/gi, replacement: name },
-      { pattern: /[A-Za-zçğıöşüÇĞIİÖŞÜ\s]+(?:Hotel|Otel|Resort|Motel|Inn)/gi, replacement: name },
-      { pattern: /(?:Hilton|Marriott|Sheraton|Hyatt|Ritz|Waldorf|Four\s+Seasons)\s+[A-Za-zçğıöşüÇĞIİÖŞÜ\s]*/gi, replacement: name },
-      { pattern: /<h[1-6][^>]*>[^<]*[A-Za-zçğıöşüÇĞIİÖŞÜ\s]+[^<]*<\/h[1-6]>/gi, replacement: `<h1>${name}</h1>` },
-      { pattern: /<title>[^<]*<\/title>/gi, replacement: `<title>${name}</title>` },
+         // 5. Website keys'leri tanımla ve son temizlik
+     // Cheerio manipülasyonlarından sonra güncel HTML'i al
+     let processedHTML = $.html();
+     
+     // Website keys değiştirme (sadece template placeholder'ları)
+     processedHTML = processedHTML
+       .replace(/{{name}}/g, name)
+       .replace(/{{address}}/g, address)
+       .replace(/{{phone}}/g, phone)
+       .replace(/{{email}}/g, email)
+       .replace(/{{description}}/g, description || '')
+       .replace(/{{rooms}}/g, rooms || '')
+       .replace(/{{logo}}/g, logo || '')
+       .replace(/{{website}}/g, website || '')
+       .replace(/{{facebook}}/g, facebook || '')
+       .replace(/{{instagram}}/g, instagram || '')
+       .replace(/{{twitter}}/g, twitter || '')
+       .replace(/{{linkedin}}/g, linkedin || '')
+       .replace(/{{youtube}}/g, youtube || '')
+       .replace(/{{whatsapp}}/g, whatsapp || '')
+       .replace(/{{checkIn}}/g, checkIn || '')
+       .replace(/{{checkOut}}/g, checkOut || '')
+       .replace(/{{amenities}}/g, amenities || '')
+       .replace(/{{priceRange}}/g, priceRange || '')
+       .replace(/{{starRating}}/g, starRating ? '⭐'.repeat(parseInt(starRating)) : '');
+     
+           // Email linkleri hedefli değişim
+      $(`a[href^="mailto:"]`).attr('href', `mailto:${email}`);
       
-      // Telefon değiştirme - Çok agresif
-      { pattern: /\+?[0-9\s\-\(\)\.]{10,}/g, replacement: phone },
-      { pattern: /tel:[\+]?[0-9\s\-\(\)\.]+/gi, replacement: `tel:${phone}` },
-      { pattern: /[0-9]{3}[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{2}[\s\-\.]?[0-9]{2}/g, replacement: phone },
-      { pattern: /[0-9]{4}[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{2}[\s\-\.]?[0-9]{2}/g, replacement: phone },
-      
-      // Email değiştirme - Çok agresif
-      { pattern: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, replacement: email },
-      { pattern: /mailto:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, replacement: `mailto:${email}` },
-      
-      // Adres değiştirme - Çok agresif
-      { pattern: /(?:Adres|Address|Konum|Location)[\s:]*[A-Za-zçğıöşüÇĞIİÖŞÜ0-9\s,\.\-]+/gi, replacement: `Adres: ${address}` },
-      { pattern: /[A-Za-zçğıöşüÇĞIİÖŞÜ\s,\.\-]+(?:cadde|caddesi|sokak|sokağı|mahalle|mahallesi|bulvar|bulvarı)/gi, replacement: address },
-      
-      // Sosyal medya linkleri
-      { pattern: /https?:\/\/(www\.)?facebook\.com\/[^\s"']+/gi, replacement: facebook || '#' },
-      { pattern: /https?:\/\/(www\.)?instagram\.com\/[^\s"']+/gi, replacement: instagram || '#' },
-      { pattern: /https?:\/\/(www\.)?twitter\.com\/[^\s"']+/gi, replacement: twitter || '#' },
-      { pattern: /https?:\/\/(www\.)?linkedin\.com\/[^\s"']+/gi, replacement: linkedin || '#' },
-      { pattern: /https?:\/\/(www\.)?youtube\.com\/[^\s"']+/gi, replacement: youtube || '#' },
-      
-      // WhatsApp
-      { pattern: /https?:\/\/wa\.me\/[0-9]+/gi, replacement: whatsapp ? `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}` : '#' },
-      { pattern: /tel:[+]?[0-9\s\-\(\)\.]+/gi, replacement: `tel:${phone}` },
-    ];
-    
-    replacements.forEach(({ pattern, replacement }) => {
-      if (replacement && replacement !== '#') {
-        processedHTML = processedHTML.replace(pattern, replacement);
-        console.log('🔄 Regex değiştirme uygulandı:', pattern.source);
-      }
-    });
+      // Sosyal medya linkleri hedefli değişim
+      if (facebook) $(`a[href*="facebook.com"]`).attr('href', facebook);
+      if (instagram) $(`a[href*="instagram.com"]`).attr('href', instagram);
+      if (twitter) $(`a[href*="twitter.com"]`).attr('href', twitter);
+      if (linkedin) $(`a[href*="linkedin.com"]`).attr('href', linkedin);
+      if (youtube) $(`a[href*="youtube.com"]`).attr('href', youtube);
+     
+           // Son temizlik: Tekrarlanan telefon numaralarını temizle
+      function esc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+      const phoneOnce = new RegExp(`(?:${esc(phone)}\\s*){2,}`,'g');
+      processedHTML = processedHTML.replace(phoneOnce, phone);
+      processedHTML = processedHTML.replace(/\s{2,}/g, ' '); // aşırı boşluk temizliği
     
     console.log('✅ HTML işleme tamamlandı');
     console.log('📄 İşlenmiş HTML boyutu:', processedHTML.length, 'karakter');
@@ -373,7 +412,8 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
     console.log('  - Adres:', processedHTML.includes(address) ? '✅ Bulundu' : '❌ Bulunamadı');
 
     // 6. Production klasörüne kaydet
-    const dirPath = path.join(__dirname, '..', 'productiondir', name);
+    const dirSafe = safeDirName(name);
+    const dirPath = path.join(__dirname, '..', 'productiondir', dirSafe);
     fs.mkdirSync(dirPath, { recursive: true });
     
     const outputPath = path.join(dirPath, 'index.html');
@@ -401,7 +441,7 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
       priceRange,
       starRating,
       ownerId: req.user.userId,
-      siteUrl: `/productiondir/${name}/index.html`
+      siteUrl: `/productiondir/${dirSafe}/index.html`
     });
 
     await newHotel.save();
@@ -411,9 +451,9 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Site başarıyla klonlandı!',
-      fileName: `${name}/index.html`,
-      fileUrl: `/productiondir/${name}/index.html`,
-      siteUrl: `http://localhost:5000/productiondir/${name}/index.html`
+      fileName: `${dirSafe}/index.html`,
+      fileUrl: `/productiondir/${dirSafe}/index.html`,
+      siteUrl: `http://localhost:5000/productiondir/${dirSafe}/index.html`
     });
 
   } catch (err) {

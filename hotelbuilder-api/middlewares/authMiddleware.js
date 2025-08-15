@@ -14,7 +14,7 @@ const verifyToken = (req, res, next) => {
     // Token'ı çöz
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // İsteğe user bilgisini ekle (ileride lazım olabilir)
+    
     req.user = decoded;
 
     next(); // Devam et
