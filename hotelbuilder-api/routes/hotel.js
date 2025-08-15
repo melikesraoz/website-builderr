@@ -80,14 +80,19 @@ router.post('/generate', verifyToken, async (req, res) => {
 
 // POST /api/hotel/generate/from-url
 router.post('/generate/from-url', verifyToken, async (req, res) => {
-  const { url, name } = req.body;
+  const { url, name, description, address, phone, email, rooms, logo } = req.body;
 
   if (!url || !name) {
     return res.status(400).json({ message: 'URL ve otel adı gereklidir.' });
   }
 
+  if (!address || !phone || !email) {
+    return res.status(400).json({ message: 'Adres, telefon ve email bilgileri gereklidir.' });
+  }
+
   try {
     console.log(`🔗 URL'den veri çekiliyor: ${url}`);
+    console.log(`📝 Otel bilgileri:`, { name, address, phone, email, rooms, description });
 
     // 1. HTML verisini çek
     const htmlResponse = await axios.get(url, {
@@ -98,6 +103,7 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
     });
 
     const rawHTML = htmlResponse.data;
+    console.log(`📄 HTML verisi alındı (${rawHTML.length} karakter)`);
 
     // 2. Cheerio ile parse et
     const $ = cheerio.load(rawHTML);
@@ -127,12 +133,197 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
       }
     });
 
-    // 4. Website keys'leri tanımla ({{name}}, {{address}} gibi)
-    const processedHTML = $.html()
+    // 3.5. Gelişmiş HTML İçerik Değiştirme
+    console.log('🔧 HTML içeriği işleniyor...');
+    
+    // Tüm metin içeren elementleri işle
+    $('*').each((_, el) => {
+      const $el = $(el);
+      let text = $el.text();
+      let html = $el.html();
+      let changed = false;
+      
+      // Otel adı değiştirme (en yaygın pattern'ler)
+      const hotelNamePatterns = [
+        /(?:otel|hotel|resort|motel|inn)\s+[A-Za-zçğıöşüÇĞIİÖŞÜ\s]+/gi,
+        /[A-Za-zçğıöşüÇĞIİÖŞÜ\s]+(?:otel|hotel|resort|motel|inn)/gi,
+        /<h[1-6][^>]*>[^<]*[A-Za-zçğıöşüÇĞIİÖŞÜ\s]+[^<]*<\/h[1-6]>/gi
+      ];
+      
+      hotelNamePatterns.forEach(pattern => {
+        if (pattern.test(text)) {
+          text = text.replace(pattern, name);
+          html = html.replace(pattern, name);
+          changed = true;
+        }
+      });
+      
+      // Telefon numarası değiştirme (daha kapsamlı)
+      const phonePatterns = [
+        /\+?[0-9\s\-\(\)\.]{10,}/g,
+        /[0-9]{3}[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{2}[\s\-\.]?[0-9]{2}/g,
+        /[0-9]{4}[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{2}[\s\-\.]?[0-9]{2}/g,
+        /[0-9]{2}[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{2}[\s\-\.]?[0-9]{2}/g,
+        /tel:[\+]?[0-9\s\-\(\)\.]+/gi
+      ];
+      
+      phonePatterns.forEach(pattern => {
+        if (pattern.test(text)) {
+          text = text.replace(pattern, phone);
+          html = html.replace(pattern, phone);
+          changed = true;
+        }
+      });
+      
+      // Email değiştirme
+      const emailPatterns = [
+        /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+        /mailto:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi
+      ];
+      
+      emailPatterns.forEach(pattern => {
+        if (pattern.test(text)) {
+          text = text.replace(pattern, email);
+          html = html.replace(pattern, email);
+          changed = true;
+        }
+      });
+      
+      // Adres değiştirme (daha kapsamlı)
+      const addressPatterns = [
+        /(?:adres|address|konum|location|adresi|addresses)[\s:]*[A-Za-zçğıöşüÇĞIİÖŞÜ0-9\s,\.\-]+/gi,
+        /[A-Za-zçğıöşüÇĞIİÖŞÜ\s,\.\-]+(?:cadde|caddesi|sokak|sokağı|mahalle|mahallesi|bulvar|bulvarı)/gi
+      ];
+      
+      addressPatterns.forEach(pattern => {
+        if (pattern.test(text)) {
+          text = text.replace(pattern, address);
+          html = html.replace(pattern, address);
+          changed = true;
+        }
+      });
+      
+      // Oda sayısı değiştirme
+      if (rooms) {
+        const roomPatterns = [
+          /(?:oda|room|bedroom)[\s:]*[0-9]+/gi,
+          /[0-9]+[\s]*(?:oda|room|bedroom)/gi
+        ];
+        
+        roomPatterns.forEach(pattern => {
+          if (pattern.test(text)) {
+            text = text.replace(pattern, `${rooms} oda`);
+            html = html.replace(pattern, `${rooms} oda`);
+            changed = true;
+          }
+        });
+      }
+      
+      // Açıklama değiştirme (title, meta description, h1-h6)
+      if (description) {
+        const descPatterns = [
+          /<title>[^<]*<\/title>/gi,
+          /<meta[^>]*name="description"[^>]*content="[^"]*"[^>]*>/gi,
+          /<h[1-6][^>]*>[^<]*<\/h[1-6]>/gi
+        ];
+        
+        descPatterns.forEach(pattern => {
+          if (pattern.test(html)) {
+            html = html.replace(pattern, description);
+            changed = true;
+          }
+        });
+      }
+      
+      // Değişiklik varsa uygula
+      if (changed) {
+        $el.html(html);
+      }
+    });
+    
+    // Logo değiştirme (daha kapsamlı)
+    if (logo) {
+      $('img').each((_, el) => {
+        const $img = $(el);
+        const src = $img.attr('src') || '';
+        const alt = $img.attr('alt') || '';
+        const title = $img.attr('title') || '';
+        
+        // Logo içeren resimleri değiştir
+        if (src.toLowerCase().includes('logo') || 
+            alt.toLowerCase().includes('logo') || 
+            title.toLowerCase().includes('logo') ||
+            src.toLowerCase().includes('brand') ||
+            alt.toLowerCase().includes('brand')) {
+          $img.attr('src', logo);
+          console.log('🖼️ Logo değiştirildi:', src, '→', logo);
+        }
+      });
+    }
+    
+    // Meta tag'leri güncelle
+    $('meta[name="description"]').attr('content', description || name);
+    $('meta[property="og:title"]').attr('content', name);
+    $('meta[property="og:description"]').attr('content', description || name);
+    $('title').text(name);
+    
+    // Schema.org yapılandırılmış veri güncelleme
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const $script = $(el);
+        let jsonData = JSON.parse($script.html());
+        
+        if (jsonData['@type'] === 'Hotel' || jsonData['@type'] === 'LodgingBusiness') {
+          jsonData.name = name;
+          jsonData.description = description || jsonData.description;
+          jsonData.address = address;
+          jsonData.telephone = phone;
+          jsonData.email = email;
+          
+          $script.html(JSON.stringify(jsonData, null, 2));
+          console.log('🏨 Schema.org verisi güncellendi');
+        }
+      } catch (err) {
+        // JSON parse hatası olursa atla
+      }
+    });
+
+    // 4. Website keys'leri tanımla ve son temizlik
+    let processedHTML = $.html();
+    
+    // Website keys değiştirme
+    processedHTML = processedHTML
       .replace(/{{name}}/g, name)
-      .replace(/{{address}}/g, 'Otel Adresi')
-      .replace(/{{phone}}/g, '+90 555 123 4567')
-      .replace(/{{email}}/g, 'info@otel.com');
+      .replace(/{{address}}/g, address)
+      .replace(/{{phone}}/g, phone)
+      .replace(/{{email}}/g, email)
+      .replace(/{{description}}/g, description || '')
+      .replace(/{{rooms}}/g, rooms || '')
+      .replace(/{{logo}}/g, logo || '');
+    
+    // Ek metin değiştirme (regex ile)
+    const replacements = [
+      // Otel adı değiştirme
+      { pattern: /(?:Grand\s+)?(?:Hotel|Otel|Resort|Motel|Inn)\s+[A-Za-zçğıöşüÇĞIİÖŞÜ\s]+/gi, replacement: name },
+      { pattern: /[A-Za-zçğıöşüÇĞIİÖŞÜ\s]+(?:Hotel|Otel|Resort|Motel|Inn)/gi, replacement: name },
+      
+      // Telefon değiştirme
+      { pattern: /\+?[0-9\s\-\(\)\.]{10,}/g, replacement: phone },
+      { pattern: /tel:[\+]?[0-9\s\-\(\)\.]+/gi, replacement: `tel:${phone}` },
+      
+      // Email değiştirme
+      { pattern: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, replacement: email },
+      { pattern: /mailto:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, replacement: `mailto:${email}` },
+      
+      // Adres değiştirme
+      { pattern: /(?:Adres|Address|Konum|Location)[\s:]*[A-Za-zçğıöşüÇĞIİÖŞÜ0-9\s,\.\-]+/gi, replacement: `Adres: ${address}` },
+    ];
+    
+    replacements.forEach(({ pattern, replacement }) => {
+      processedHTML = processedHTML.replace(pattern, replacement);
+    });
+    
+    console.log('✅ HTML işleme tamamlandı');
 
     // 5. Production klasörüne kaydet
     const dirPath = path.join(__dirname, '..', 'productiondir', name);
@@ -144,10 +335,12 @@ router.post('/generate/from-url', verifyToken, async (req, res) => {
     // 6. Veritabanına kaydet
     const newHotel = new Hotel({
       name,
-      description: 'URL ile klonlanmış site',
-      address: 'Otel Adresi',
-      phone: '+90 555 123 4567',
-      email: 'info@otel.com',
+      description: description || 'URL ile klonlanmış site',
+      address,
+      phone,
+      email,
+      rooms,
+      logo,
       ownerId: req.user.userId,
       siteUrl: `/productiondir/${name}/index.html`
     });

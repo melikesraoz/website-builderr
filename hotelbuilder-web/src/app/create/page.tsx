@@ -18,7 +18,13 @@ export default function CreatePage() {
   });
   const [urlData, setUrlData] = useState({
     url: '',
-    name: ''
+    name: '',
+    description: '',
+    address: '',
+    phone: '',
+    email: '',
+    rooms: '',
+    logo: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -72,6 +78,11 @@ export default function CreatePage() {
       return;
     }
 
+    if (!urlData.address || !urlData.phone || !urlData.email) {
+      setError('Adres, telefon ve email bilgileri gereklidir');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setSuccess('');
@@ -97,7 +108,16 @@ export default function CreatePage() {
 
       if (response.ok) {
         setSuccess('Site başarıyla klonlandı!');
-        setUrlData({ url: '', name: '' });
+        setUrlData({ 
+          url: '', 
+          name: '', 
+          description: '', 
+          address: '', 
+          phone: '', 
+          email: '', 
+          rooms: '', 
+          logo: '' 
+        });
         setTimeout(() => {
           router.push('/dashboard');
         }, 2000);
@@ -119,7 +139,7 @@ export default function CreatePage() {
     }));
   };
 
-  const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setUrlData(prev => ({
       ...prev,
@@ -365,52 +385,183 @@ export default function CreatePage() {
                     className="form-input"
                     placeholder="https://example-hotel.com"
                   />
-                  <small className="form-help">
-                    Klonlamak istediğiniz otel web sitesinin tam URL'sini girin
-                  </small>
+                                     <small className="form-help">
+                     Klonlamak istediğiniz otel web sitesinin tam URL'sini girin
+                   </small>
+                   <div className="form-example">
+                     <strong>Örnek URL'ler:</strong>
+                     <ul>
+                       <li>https://www.hilton.com/en/hotels/istanbul-hiitw-hilton-istanbul-bomonti-hotel-cekmekoy/</li>
+                       <li>https://www.marriott.com/en-us/hotels/istmc-istanbul-marriott-hotel-sisli/</li>
+                       <li>https://www.booking.com/hotel/tr/grand-hotel-istanbul.html</li>
+                     </ul>
+                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="urlName" className="form-label">
-                    Otel Adı *
-                  </label>
-                  <input
-                    id="urlName"
-                    name="name"
-                    type="text"
-                    value={urlData.name}
-                    onChange={handleUrlInputChange}
-                    required
-                    className="form-input"
-                    placeholder="Örn: Ozotel, Hilton, Marriott"
-                  />
-                  <small className="form-help">
-                    Bu isim site klasörü ve veritabanı kaydı için kullanılacak
-                  </small>
-                </div>
+                               <div className="form-group">
+                 <label htmlFor="urlName" className="form-label">
+                   Otel Adı *
+                 </label>
+                 <input
+                   id="urlName"
+                   name="name"
+                   type="text"
+                   value={urlData.name}
+                   onChange={handleUrlInputChange}
+                   required
+                   className="form-input"
+                   placeholder="Örn: Ozotel, Hilton, Marriott"
+                 />
+                 <small className="form-help">
+                   Bu isim site klasörü ve veritabanı kaydı için kullanılacak
+                 </small>
+               </div>
+
+               <div className="form-group">
+                 <label htmlFor="urlDescription" className="form-label">
+                   Açıklama
+                 </label>
+                 <textarea
+                   id="urlDescription"
+                   name="description"
+                   value={urlData.description}
+                   onChange={handleUrlInputChange}
+                   className="form-textarea"
+                   placeholder="Otel hakkında kısa açıklama..."
+                   rows={3}
+                 />
+               </div>
+             </div>
+
+             <div className="form-section">
+               <h3 className="section-title">Otel Bilgileri (Klonlanacak)</h3>
+               <p className="section-description">
+                 Bu bilgiler klonlanan sitedeki mevcut bilgilerle değiştirilecek
+               </p>
+               
+               <div className="form-row">
+                 <div className="form-group">
+                   <label htmlFor="urlAddress" className="form-label">
+                     Adres *
+                   </label>
+                   <input
+                     id="urlAddress"
+                     name="address"
+                     type="text"
+                     value={urlData.address}
+                     onChange={handleUrlInputChange}
+                     required
+                     className="form-input"
+                     placeholder="Otel adresi"
+                   />
+                 </div>
+
+                 <div className="form-group">
+                   <label htmlFor="urlPhone" className="form-label">
+                     Telefon *
+                   </label>
+                   <input
+                     id="urlPhone"
+                     name="phone"
+                     type="tel"
+                     value={urlData.phone}
+                     onChange={handleUrlInputChange}
+                     required
+                     className="form-input"
+                     placeholder="+90 555 123 4567"
+                   />
+                 </div>
+               </div>
+
+               <div className="form-row">
+                 <div className="form-group">
+                   <label htmlFor="urlEmail" className="form-label">
+                     Email *
+                   </label>
+                   <input
+                     id="urlEmail"
+                     name="email"
+                     type="email"
+                     value={urlData.email}
+                     onChange={handleUrlInputChange}
+                     required
+                     className="form-input"
+                     placeholder="info@otel.com"
+                   />
+                 </div>
+
+                 <div className="form-group">
+                   <label htmlFor="urlRooms" className="form-label">
+                     Oda Sayısı
+                   </label>
+                   <input
+                     id="urlRooms"
+                     name="rooms"
+                     type="number"
+                     value={urlData.rooms}
+                     onChange={handleUrlInputChange}
+                     className="form-input"
+                     placeholder="50"
+                   />
+                 </div>
+               </div>
+
+               <div className="form-group">
+                 <label htmlFor="urlLogo" className="form-label">
+                   Logo URL
+                 </label>
+                 <input
+                   id="urlLogo"
+                   name="logo"
+                   type="url"
+                   value={urlData.logo}
+                   onChange={handleUrlInputChange}
+                   className="form-input"
+                   placeholder="https://example.com/logo.png"
+                 />
+                 <small className="form-help">
+                   Bu logo klonlanan sitedeki mevcut logo ile değiştirilecek
+                 </small>
+               </div>
               </div>
 
-              <div className="form-section">
-                <h3 className="section-title">Klonlama Özellikleri</h3>
-                <div className="features-list">
-                  <div className="feature-item">
-                    <span className="feature-icon">✅</span>
-                    <span className="feature-text">HTML içeriği otomatik çekilir</span>
-                  </div>
-                  <div className="feature-item">
-                    <span className="feature-icon">✅</span>
-                    <span className="feature-text">Resim, CSS, JS dosyaları düzeltilir</span>
-                  </div>
-                  <div className="feature-item">
-                    <span className="feature-icon">✅</span>
-                    <span className="feature-text">Website keys tanımlanır</span>
-                  </div>
-                  <div className="feature-item">
-                    <span className="feature-icon">✅</span>
-                    <span className="feature-text">Site production klasörüne kaydedilir</span>
-                  </div>
-                </div>
-              </div>
+                             <div className="form-section">
+                 <h3 className="section-title">Klonlama Özellikleri</h3>
+                 <div className="features-list">
+                   <div className="feature-item">
+                     <span className="feature-icon">✅</span>
+                     <span className="feature-text">HTML içeriği otomatik çekilir</span>
+                   </div>
+                   <div className="feature-item">
+                     <span className="feature-icon">✅</span>
+                     <span className="feature-text">Resim, CSS, JS dosyaları düzeltilir</span>
+                   </div>
+                   <div className="feature-item">
+                     <span className="feature-icon">✅</span>
+                     <span className="feature-text">Mevcut telefon numaraları değiştirilir</span>
+                   </div>
+                   <div className="feature-item">
+                     <span className="feature-icon">✅</span>
+                     <span className="feature-text">Mevcut email adresleri değiştirilir</span>
+                   </div>
+                   <div className="feature-item">
+                     <span className="feature-icon">✅</span>
+                     <span className="feature-text">Adres bilgileri güncellenir</span>
+                   </div>
+                   <div className="feature-item">
+                     <span className="feature-icon">✅</span>
+                     <span className="feature-text">Logo otomatik değiştirilir</span>
+                   </div>
+                   <div className="feature-item">
+                     <span className="feature-icon">✅</span>
+                     <span className="feature-text">Website keys (name, address) tanımlanır</span>
+                   </div>
+                   <div className="feature-item">
+                     <span className="feature-icon">✅</span>
+                     <span className="feature-text">Site production klasörüne kaydedilir</span>
+                   </div>
+                 </div>
+               </div>
 
               <div className="form-actions">
                 <Link href="/dashboard" className="btn btn-secondary">

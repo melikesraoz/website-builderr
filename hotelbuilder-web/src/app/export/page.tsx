@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Hotel {
   _id: string;
@@ -10,7 +11,7 @@ interface Hotel {
   address: string;
   phone: string;
   email: string;
-  siteUrl: string;
+  siteUrl?: string;
   createdAt: string;
 }
 
@@ -18,12 +19,15 @@ export default function ExportPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchHotels();
   }, []);
 
   const fetchHotels = async () => {
+    setLoading(true);
+    setError('');
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -34,144 +38,263 @@ export default function ExportPage() {
 
       const response = await fetch('http://localhost:5000/api/hotel/my-hotels', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
         const data = await response.json();
-        setHotels(data.hotels.filter((hotel: Hotel) => hotel.siteUrl));
+        setHotels(data.hotels);
       } else {
-        setError('Otel listesi alınamadı');
+        setError('Otel listesi alınamadı - Backend bağlantısı yok');
       }
     } catch (err) {
-      setError('Bağlantı hatası');
+      setError('Bağlantı hatası - Backend çalışmıyor');
     } finally {
       setLoading(false);
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert('Link kopyalandı!');
+  const copyToClipboard = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(url);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopiedUrl(url);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    }
+  };
+
+  const getSiteStatus = (hotel: Hotel) => {
+    if (hotel.siteUrl) {
+      return { status: 'active', text: 'Aktif', color: 'success' };
+    }
+    return { status: 'inactive', text: 'Site Yok', color: 'warning' };
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gray-900">
-        <div className="text-xl">Yükleniyor...</div>
+      <div className="export-page">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Siteleriniz yükleniyor...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gray-900">
-        <div className="text-center">
-          <div className="text-red-400 mb-4">{error}</div>
-          <Link href="/login" className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
-            Giriş Yap
-          </Link>
+      <div className="export-page">
+        <div className="error-container">
+          <div className="error-icon">⚠️</div>
+          <div className="error-title">Bağlantı Hatası</div>
+          <div className="error-message">{error}</div>
+          <div className="error-actions">
+            <Link href="/login" className="btn btn-primary">
+              Giriş Yap
+            </Link>
+            <button onClick={() => window.location.reload()} className="btn btn-secondary">
+              Tekrar Dene
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Site Export</h1>
-          <Link 
-            href="/dashboard" 
-            className="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-          >
-            ← Dashboard'a Dön
+    <div className="export-page">
+      {/* Navigation */}
+      <nav className="dashboard-nav">
+        <div className="nav-brand">
+          <div className="logo-image">
+            <Image
+              src="/webSnap-logo.png"
+              alt="WebSnap Logo"
+              width={40}
+              height={40}
+            />
+          </div>
+          <span className="brand-text">WebSnap</span>
+        </div>
+        
+        <div className="nav-menu">
+          <Link href="/dashboard" className="nav-link">
+            Dashboard
+          </Link>
+          <Link href="/create" className="nav-link">
+            Site Oluştur
+          </Link>
+          <Link href="/export" className="nav-link active">
+            Export
           </Link>
         </div>
 
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-blue-400">📤 Site Export Merkezi</h2>
-            <p className="text-gray-300 mb-4">
-              Oluşturduğunuz siteleri görüntüleyebilir, linklerini kopyalayabilir ve 
-              müşterilerinizle paylaşabilirsiniz.
+        <div className="nav-user">
+          <Link href="/dashboard" className="btn btn-secondary">
+            Geri Dön
+          </Link>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <div className="export-content">
+        <div className="export-container">
+          <div className="export-header">
+            <h1 className="export-title">Site Export & Yönetim</h1>
+            <p className="export-subtitle">
+              Oluşturduğunuz siteleri görüntüleyin, paylaşın ve yönetin
             </p>
-            <div className="text-sm text-gray-400">
-              <div className="mb-2">✅ Tüm siteleriniz burada listelenir</div>
-              <div className="mb-2">✅ Link kopyalama özelliği</div>
-              <div>✅ Yeni sekmede açma</div>
+          </div>
+
+          {/* Stats Overview */}
+          <div className="export-stats">
+            <div className="stat-card">
+              <div className="stat-icon">🏨</div>
+              <div className="stat-number">{hotels.length}</div>
+              <div className="stat-label">Toplam Site</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">✅</div>
+              <div className="stat-number">{hotels.filter(h => h.siteUrl).length}</div>
+              <div className="stat-label">Aktif Site</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">🔗</div>
+              <div className="stat-number">{hotels.filter(h => h.siteUrl).length}</div>
+              <div className="stat-label">Paylaşılabilir</div>
             </div>
           </div>
 
           {hotels.length === 0 ? (
-            <div className="bg-gray-800 rounded-lg p-8 text-center">
-              <div className="text-gray-400 mb-4">Henüz aktif siteniz bulunmuyor</div>
-              <Link 
-                href="/create" 
-                className="bg-blue-600 px-6 py-3 rounded hover:bg-blue-700 transition-colors"
-              >
-                İlk Sitenizi Oluşturun
-              </Link>
+            <div className="empty-state">
+              <div className="empty-icon">📤</div>
+              <div className="empty-title">Henüz site oluşturmadınız</div>
+              <div className="empty-description">
+                Export edilecek site bulunamadı. Önce bir site oluşturun veya URL ile klonlayın.
+              </div>
+              <div className="empty-actions">
+                <Link href="/create" className="btn btn-primary">
+                  Site Oluştur
+                </Link>
+                <Link href="/create" className="btn btn-secondary">
+                  URL ile Klonla
+                </Link>
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {hotels.map((hotel) => (
-                <div key={hotel._id} className="bg-gray-800 rounded-lg p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold">{hotel.name}</h3>
-                    <span className="text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded">
-                      Aktif
-                    </span>
-                  </div>
-                  
-                  <p className="text-gray-400 text-sm mb-4">{hotel.description}</p>
-                  
-                  <div className="space-y-2 text-sm mb-4">
-                    <div><span className="text-gray-500">Adres:</span> {hotel.address}</div>
-                    <div><span className="text-gray-500">Telefon:</span> {hotel.phone}</div>
-                    <div><span className="text-gray-500">Email:</span> {hotel.email}</div>
-                    <div><span className="text-gray-500">Oluşturulma:</span> {new Date(hotel.createdAt).toLocaleDateString('tr-TR')}</div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <a 
-                        href={`http://localhost:5000${hotel.siteUrl}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 bg-green-600 px-4 py-2 rounded text-center hover:bg-green-700 transition-colors text-sm"
-                      >
-                        🌐 Yeni Sekmede Aç
-                      </a>
-                      <button
-                        onClick={() => copyToClipboard(`http://localhost:5000${hotel.siteUrl}`)}
-                        className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm"
-                      >
-                        📋 Kopyala
-                      </button>
-                    </div>
-                    
-                    <div className="text-xs text-gray-500 bg-gray-700 p-2 rounded">
-                      <div className="font-medium mb-1">Site Linki:</div>
-                      <div className="break-all">
-                        http://localhost:5000{hotel.siteUrl}
+            <div className="export-grid">
+              {hotels.map((hotel) => {
+                const status = getSiteStatus(hotel);
+                const siteUrl = hotel.siteUrl ? `http://localhost:5000${hotel.siteUrl}` : null;
+                
+                return (
+                  <div key={hotel._id} className="export-card">
+                    <div className="export-card-header">
+                      <div className="export-card-title-section">
+                        <h3 className="export-card-title">{hotel.name}</h3>
+                        <div className={`status-badge ${status.color}`}>
+                          {status.text}
+                        </div>
+                      </div>
+                      <div className="export-card-date">
+                        {new Date(hotel.createdAt).toLocaleDateString('tr-TR')}
                       </div>
                     </div>
+                    
+                    <p className="export-card-description">
+                      {hotel.description || 'Açıklama bulunmuyor'}
+                    </p>
+                    
+                    <div className="export-card-details">
+                      <div className="detail-item">
+                        <span className="detail-label">📍</span>
+                        <span className="detail-value">{hotel.address || 'Adres belirtilmemiş'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">📞</span>
+                        <span className="detail-value">{hotel.phone || 'Telefon belirtilmemiş'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">✉️</span>
+                        <span className="detail-value">{hotel.email || 'Email belirtilmemiş'}</span>
+                      </div>
+                    </div>
+
+                    <div className="export-card-actions">
+                      {siteUrl ? (
+                        <>
+                          <a 
+                            href={siteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-view"
+                          >
+                            👁️ Görüntüle
+                          </a>
+                          <button 
+                            onClick={() => copyToClipboard(siteUrl)}
+                            className={`btn ${copiedUrl === siteUrl ? 'btn-success' : 'btn-copy'}`}
+                          >
+                            {copiedUrl === siteUrl ? '✅ Kopyalandı!' : '📋 Kopyala'}
+                          </button>
+                          <Link 
+                            href={`/edit/${hotel._id}`}
+                            className="btn btn-edit"
+                          >
+                            ✏️ Düzenle
+                          </Link>
+                        </>
+                      ) : (
+                        <div className="no-site-actions">
+                          <span className="no-site-text">Site henüz oluşturulmadı</span>
+                          <Link href="/create" className="btn btn-primary">
+                            Site Oluştur
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+
+                    {siteUrl && (
+                      <div className="export-card-url">
+                        <span className="url-label">Site URL:</span>
+                        <span className="url-value">{siteUrl}</span>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
-          <div className="mt-8 bg-gray-800 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">📋 Export İpuçları</h3>
-            <div className="space-y-2 text-sm text-gray-400">
-              <div>• Site linklerini müşterilerinizle paylaşabilirsiniz</div>
-              <div>• Linkler doğrudan çalışır ve herhangi bir tarayıcıda açılabilir</div>
-              <div>• Siteleriniz otomatik olarak güncellenir</div>
-              <div>• Yeni siteler oluşturduğunuzda burada görünecektir</div>
+          {/* Quick Actions */}
+          <div className="quick-actions">
+            <h3 className="quick-actions-title">Hızlı İşlemler</h3>
+            <div className="quick-actions-grid">
+              <Link href="/create" className="quick-action-card">
+                <div className="quick-action-icon">➕</div>
+                <div className="quick-action-title">Yeni Site Oluştur</div>
+                <div className="quick-action-description">Manuel olarak site oluşturun</div>
+              </Link>
+              <Link href="/create" className="quick-action-card">
+                <div className="quick-action-icon">🔗</div>
+                <div className="quick-action-title">URL ile Klonla</div>
+                <div className="quick-action-description">Mevcut siteyi klonlayın</div>
+              </Link>
+              <div className="quick-action-card">
+                <div className="quick-action-icon">📊</div>
+                <div className="quick-action-title">İstatistikler</div>
+                <div className="quick-action-description">Site performansını görün</div>
+              </div>
             </div>
           </div>
         </div>
